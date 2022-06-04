@@ -2,12 +2,15 @@
 
 namespace App\Controller;
 
+use App\Entity\PostLike;
 use App\Entity\Recipe;
 use App\Form\RecipeType;
 //use App\Entity\Ingredient;
 use App\Repository\RecipeRepository;
 use App\Entity\Recipe as EntityRecipe;
+use App\Repository\PostLikeRepository;
 use Doctrine\ORM\EntityManagerInterface;
+//use Doctrine\Persistence\ObjectManager;
 use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -136,7 +139,53 @@ class RecipeController extends AbstractController
         return $this->redirectToRoute('recipe.index');
     }
 
+    /**
+     * allows to like or unlike a recipe
+     *
+     * @Route("/recette/{id}/like", name="recipe_like")
+     * 
+     * @param Recipe $recipe
+     * @param ObjectManager $manager
+     * @param PostLikeRepository $likeRepo
+     * @return Response
+     */
+    public function like(Recipe $recipe, EntityManagerInterface $manager, PostLikeRepository $likeRepo) : Response 
+    {
 
+        $user = $this->getUser();
 
+        if(!$user) return $this->json([
+            'code'=> 403,
+            'message'=> "Unauthorized"
+        ], 403);
 
+        if($recipe->isLikedByUser($user)) {
+            $like = $likeRepo->findOneBy([
+                'recipe' => $recipe,
+                'user' => $user
+            ]);
+
+            $manager->remove($like);
+            $manager->flush();
+
+            return $this->json([
+                'code' => 200,
+                'message' => 'Like bine supprimé' ,
+                'likes' => $likeRepo->count(['recipe' => $recipe])
+
+            ], 200);
+        }
+
+        $like = new PostLike();
+        $like->setRecipe($recipe)
+            ->setUser($user);
+
+             $manager->persist($like);
+            $manager->flush();
+
+        return $this->json([
+            'code' => 200, 
+            'message' => 'Like bien ajouté',
+            'likes' => $likeRepo->count(['recipe' => $recipe])], 200);
+    }
 }

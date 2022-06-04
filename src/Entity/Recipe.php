@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 
+use App\Entity\User;
 use Doctrine\ORM\Mapping as ORM;
 use App\Repository\RecipeRepository;
 use Doctrine\Common\Collections\Collection;
@@ -92,11 +93,18 @@ class Recipe
      */
     private $ingredients;
 
+    
+    /**
+     * @ORM\OneToMany(targetEntity=PostLike::class, mappedBy="recipe")
+     */
+    private $likes1;
+
     public function __construct()
     {
         $this->ingredients = new ArrayCollection();
         $this->createdAt = new \DateTimeImmutable;
-        $this->updatedAt = new \DateTimeImmutable();
+        $this->updatedAt = new \DateTimeImmutable();        
+        $this->likes1 = new ArrayCollection();
 
 
     }
@@ -260,5 +268,51 @@ class Recipe
         $this->ingredients->removeElement($ingredient);
 
         return $this;
+    }
+
+    
+    /**
+     * @return Collection<int, PostLike>
+     */
+    public function getLikes1(): Collection
+    {
+        return $this->likes1;
+    }
+
+    public function addLikes1(PostLike $likes1): self
+    {
+        if (!$this->likes1->contains($likes1)) {
+            $this->likes1[] = $likes1;
+            $likes1->setRecipe($this);
+        }
+
+        return $this;
+    }
+
+    public function removeLikes1(PostLike $likes1): self
+    {
+        if ($this->likes1->removeElement($likes1)) {
+            // set the owning side to null (unless already changed)
+            if ($likes1->getRecipe() === $this) {
+                $likes1->setRecipe(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * allows to know if this recipe is liked by a user
+     *
+     * @param User $user
+     * @return boolean
+     */
+    public function isLikedByUser(User $user) : bool
+    {
+        foreach ($this->likes as $like) {
+            if ($like->getUser() === $user) return true;
+        }
+
+        return false;
     }
 }

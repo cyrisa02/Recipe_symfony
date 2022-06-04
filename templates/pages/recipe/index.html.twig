@@ -9,10 +9,10 @@
 
 			<h1>Mes Recettes</h1>
 
-			 <a href= "{{ path ("recipe.new")}}" class= "btn btn-primary">
-			Créer une recette
-			</a>  
-				{% for message in app.flashes('success')%}
+			<a href="{{ path ("recipe.new")}}" class="btn btn-primary">
+				Créer une recette
+			</a>
+			{% for message in app.flashes('success')%}
 				<div class="alert alert-success mt-4">
 					{{message}}
 				</div>
@@ -22,7 +22,7 @@
 				<h4>Nombre total de recettes:
 					{{ recipes.getTotalItemCount }}</h4>
 			</div>
-			
+
 			<table class="table table-hover mt-4">
 				<thead>
 					<tr>
@@ -40,28 +40,47 @@
 
 					{%for recipe in recipes %}
 						<tr class="table-primary">
-							<th scope="row">{{recipe.id}}</th>
+							<th scope="row">{{recipe.id}}
+								<a href="{{ path ('recipe_like', {'id': recipe.id})}}" class="btn btn-link js-like">
+									{% if app.user and recipe.isLikedByUser(app.user) %}
+										<i class="fa-brands fa-apple"></i>
+
+									{% else %}
+
+										<i class="fa-solid fa-thumbs-up"></i>
+									{% endif %}
+
+									<span class="js-likes">{{recipe.likes1 | length}}</span>
+
+									<span class="js-label">J'aime</span>
+								</a>
+
+							</th>
 							<td>{{recipe.name}}</td>
-							<td>{% if recipe.price is null  %}
-							Non renseigné
-							{% else %}
-							{{ recipe.price }}
-							{% endif %}
+							<td>
+								{% if recipe.price is null  %}
+									Non renseigné
+								{% else %}
+									{{ recipe.price }}
+								{% endif %}
 							</td>
-							<td>{% if recipe.difficulty is null  %}
-							Non renseigné
-							{% else %}
-							{{ recipe.difficulty }}
-							{% endif %}
+							<td>
+								{% if recipe.difficulty is null  %}
+									Non renseigné
+								{% else %}
+									{{ recipe.difficulty }}
+								{% endif %}
 							</td>
 							<td>{{recipe.createdAt | date('d/m/Y')}}</td>
 							<td>
-								<a href="{{ path('recipe.edit', { id: recipe.id}) }}" class="btn btn-info">Modifier</a> 
+								<a href="{{ path('recipe.edit', { id: recipe.id}) }}" class="btn btn-info">Modifier</a>
 							</td>
 							<td>
-								 <a href="{{ path('recipe.delete', { id: recipe.id}) }}" class="btn btn-warning">Supprimer</a> 
-
+								<a href="{{ path('recipe.delete', { id: recipe.id}) }}" class="btn btn-warning">Supprimer</a>
+							</td>
 						</tr>
+
+
 					{% endfor %}
 				</tbody>
 			</table>
@@ -76,7 +95,41 @@
 
 		{% endif %}
 
-		
 
+	{% endblock %}
+
+	{% block javascripts %}
+		<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+		<script>
+			function onClickBtnLike(event) {
+
+
+event.preventDefault();
+
+const url = this.href;
+const spanCount = this.querySelector('span.js-likes');
+const icone = this.querySelector('i');
+
+axios.get(url).then(function (response) {
+spanCount.textContent = response.data.likes;
+
+if (icone.classList.contains('apple')) {
+icone.classList.replace('apple', 'thumb');
+} else {
+icone.classList.replace('thumb', 'apple');
+}
+}).catch(function (error) {
+if (error.response.status === 403) {
+window.alert("Vous ne pouvez pas liker un article si vous n'êtes pas connecté(e)")
+} else {
+window.alert("Une erreur s'est produite")
+}
+});
+}
+document.querySelectorAll('a.js-like').forEach(function (link) {
+link.addEventListener('click', onClickBtnLike);
+})
+		</script>
 
 	{% endblock %}
